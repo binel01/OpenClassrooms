@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import csv
+import os
+import time
 
 
 def book_scraper(url, category_name=0):
@@ -36,8 +38,6 @@ def book_scraper(url, category_name=0):
     category = a_list[2]
     # la note du livre
     review_rating = soup.select("div p")
-    '''"def has_a_rating(tag):
-        return tag.attr('class') == "star-rating Four"'''
     review_printer = []
     dictionnary_printer = []
     list_printer = []
@@ -54,7 +54,6 @@ def book_scraper(url, category_name=0):
     url_img = url_img["src"] 
     image_url = "http://books.toscrape.com/" + re.sub('^\W{6}', '', url_img)
     
-    print(product_page_url +'\n'+image_url)
     if category_name == 0:
         with open('book.csv', 'w', encoding='utf-8') as out:
             csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_MINIMAL)
@@ -76,7 +75,7 @@ def book_scraper(url, category_name=0):
 
     
 
-def category_scraper(category_url):
+def category_scraper(category_url, dir_path=''):
     category_webpage = requests.get(category_url)
     soup_category = BeautifulSoup(category_webpage.content, "html.parser")
 
@@ -86,15 +85,18 @@ def category_scraper(category_url):
     soups = [soup_category]
 
     #tant qu'il y a un bouton next en bas de la page, on rajoute un nouvel élément soup dans la liste et on passe à la prochaine page
-    while next_page_button:
-        for text in next_page_button:
-            # va trouver l'url de la prochaine page si il y en a une
-            category_url = re.sub('[indexpage-]*\d*\.html$', '', category_url)
-            next_page_button_url = category_url + text.attrs['href']   
-        new_category_webpage = requests.get(next_page_button_url)
-        new_soup = BeautifulSoup(new_category_webpage.content, "html.parser")
-        soups.append(new_soup) 
-        next_page_button = new_soup.find(attrs={'class':'next'})
+    if not next_page_button:
+        category_url = re.sub('[indexpage-]*\d*\.html$', '', category_url)
+    else:
+        while next_page_button:
+            for text in next_page_button:
+                # va trouver l'url de la prochaine page si il y en a une
+                category_url = re.sub('[indexpage-]*\d*\.html$', '', category_url)
+                next_page_button_url = category_url + text.attrs['href']   
+            new_category_webpage = requests.get(next_page_button_url)
+            new_soup = BeautifulSoup(new_category_webpage.content, "html.parser")
+            soups.append(new_soup) 
+            next_page_button = new_soup.find(attrs={'class':'next'})
     
     links = []
     
@@ -110,9 +112,15 @@ def category_scraper(category_url):
     
     # on trouve le nom de la categorie pour pouvoir nommer le fichier csv
     category_name = re.sub('.+category\/books\/', '', category_url)
-    category_name = category_name[0:-1]
+    print('CATEGORY_NAME :' + category_name)
+    if category_name[-1] == '/':
+        category_name = category_name[0:-1]
+    else:
+        category_name = category_name
 
-    with open('{}.csv'.format(category_name), 'w', encoding='utf-8') as out:
+
+
+    with open('{}.csv'.format(dir_path + category_name), 'w', encoding='utf-8') as out:
         csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_ALL)
         list_of_entete = ['product_page_url', 'universal_product_code(upc)',' title', 'price_including_tax', 'price_excluding_tax', \
 'number_available', 'product_description', 'category', 'review_rating', 'image_url']
@@ -123,28 +131,44 @@ def category_scraper(category_url):
         
     
     
+def book_site_scraper(book_site_url):
+    book_site_webpage = requests.get(book_site_url)
+    book_site_soup = BeautifulSoup(book_site_webpage.content, "html.parser")
+
+    # on récupère les liens vers les catégories dans le panneau à gauche du site
+    categories = book_site_soup.select("aside div ul li a")
+    category_links = []
+    for text in categories:
+        category_links.append(text.attrs['href'])
+    # list slicing pour éviter de récupérer le 1er lien qui va vers la page d'acceuil
+    category_links = category_links[1:]
+    category_links = ["http://books.toscrape.com/" + link for link in category_links]
+
     
+    # si il n'existe pas un dossier pour y mettre les csv, on en crée un
+    dir_path = '../Csv_and_Images'
+    try:
+        os.mkdir(dir_path)
+    except OSError:
+        print ("la création du dossier %s pour mettre les fichiers csv et les images scrapées a échouée" % dir_path)
+    else:
+        print ("la création du dossier %s pour mettre les fichiers csv et les images scrapées a bien réussie" % dir_path)
+
+    dir_path = dir_path + "/"
+
+    for link in category_links:
+        category_scraper(link, dir_path)
+        print(link + ' ... Scraped!')
+        time.sleep(1)
+
     
 
-category_scraper("http://books.toscrape.com/catalogue/category/books/mystery_3/index.html")       
     
+# exemple d'appel de la fonction book_site_scraper pour faire un scraping de toutes les cat. de books2scrape
+# cet appel va mettre toutes les données dans un fichier csv différent par catégorie et ces fichiers csv 
+# dans un dossier Csv_and_Images
+book_site_scraper("http://books.toscrape.com/index.html")
 
-    
-    
-
-'book_scraper("http://books.toscrape.com/catalogue/sharp-objects_997/index.html")'
-"""
-books_titles = soup.select("li h3 a")
-
-paragraph_printer = []
-for text in books_titles:
-    paragraph_printer.append(text.attrs["title"])
-
-for i in paragraph_printer:
-    print(i)
-
-books_prices = soup.find_all(attrs={'class':'price_color'})
-
-for price in books_prices:
-    print(price.string)"""
-
+# exemple d'appel de la fonction category_scraper pour uniquement scraper une catégorie,
+# crée un fichier csv du nom de la cat.
+'category_scraper("http://books.toscrape.com/catalogue/category/books/mystery_3/index.html")'
