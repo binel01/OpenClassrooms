@@ -4,7 +4,7 @@ import re
 import csv
 
 
-def book_scraper(url):
+def book_scraper(url, category_name=0):
     webpage = requests.get(url)
     soup = BeautifulSoup(webpage.content, "html.parser")
     #titre du livre
@@ -18,7 +18,6 @@ def book_scraper(url):
     universal_product_code = table_scraping[0].string
     #les prix
     price_excluding_tax = table_scraping[2].string
-    print(str(price_excluding_tax))
     price_including_tax = table_scraping[3].string
     #le nombre d'exemplaires disponibles
     number_available = table_scraping[5].string
@@ -55,18 +54,26 @@ def book_scraper(url):
     url_img = url_img["src"] 
     image_url = "http://books.toscrape.com/" + re.sub('^\W{6}', '', url_img)
     
-    with open('book.csv', 'w') as out:
-        csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_MINIMAL)
-        list_of_entete = ['product_page_url', 'universal_product_code(upc)',' title', 'price_including_tax', 'price_excluding_tax', \
-'number_available', 'product_description', 'category', 'review_rating', 'image_url']
-        list_of_rowvalues = [product_page_url, universal_product_code, book_title, price_including_tax, price_excluding_tax, \
-number_available, product_description, category, review_rating, image_url]
-        """csv_writing.writerow(list_of_entete)
-        csv_writing.writerow(product_page_url + ';' + universal_product_code + ';' + book_title + ';' + price_including_tax + ';' + \
-        price_excluding_tax + ';' + number_available + ';' + product_description + ';' + category + ';' + review_rating + ';' + \
-        image_url)"""
-        csv_writing.writerow(list_of_entete)
-        csv_writing.writerow(list_of_rowvalues)
+    print(product_page_url +'\n'+image_url)
+    if category_name == 0:
+        with open('book.csv', 'w', encoding='utf-8') as out:
+            csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_MINIMAL)
+            list_of_entete = ['product_page_url', 'universal_product_code(upc)',' title', 'price_including_tax', 'price_excluding_tax', \
+    'number_available', 'product_description', 'category', 'review_rating', 'image_url']
+            list_of_rowvalues = [product_page_url, universal_product_code, book_title, price_including_tax, price_excluding_tax, \
+    number_available, product_description, category, review_rating, image_url]
+            csv_writing.writerow(list_of_entete)
+            csv_writing.writerow(list_of_rowvalues)
+            print("category_name est égal à 0")
+
+    else:
+        with open('{}.csv'.format(category_name), 'w') as out:
+            csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_MINIMAL)
+            list_of_rowvalues = [product_page_url, universal_product_code, book_title, price_including_tax, price_excluding_tax, \
+    number_available, product_description, category, review_rating, image_url]
+            csv_writing.writerow(list_of_rowvalues)
+            print("category_name a le bon nom")
+        
 
     
 
@@ -102,10 +109,24 @@ def category_scraper(category_url):
     for index in range(len(links)):
         links[index] = "http://books.toscrape.com/catalogue/" + re.sub('^\W{9}', '', links[index])
     
-    print(links)
+    # on trouve le nom de la categorie pour pouvoir nommer le fichier csv
+    category_name = re.sub('.+category\/books\/', '', category_url)
+    category_name = category_name[0:-1]
 
-            
-category_scraper("http://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html")       
+    with open('{}.csv'.format(category_name), 'w', encoding='utf-8') as out:
+        csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_MINIMAL)
+        list_of_entete = ['product_page_url', 'universal_product_code(upc)',' title', 'price_including_tax', 'price_excluding_tax', \
+'number_available', 'product_description', 'category', 'review_rating', 'image_url']
+        csv_writing.writerow(list_of_entete)
+    
+    print(category_name)
+    for book in links:
+        book_scraper(book, category_name)
+        print(1)
+    
+    
+
+category_scraper("http://books.toscrape.com/catalogue/category/books/mystery_3/index.html")       
     
 
     
