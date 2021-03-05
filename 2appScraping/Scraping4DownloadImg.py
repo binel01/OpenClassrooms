@@ -4,6 +4,8 @@ import re
 import csv
 import os
 import time
+# import de shutil pr sauvegarder les photos localement
+import shutil
 
 
 def book_scraper(url, category_name=0):
@@ -169,6 +171,7 @@ def book_site_scraper(book_site_url, download_img = False):
         # on récupère la liste des noms de tous les fichiers .csv dans le dossier où ils ont été rassemblés
         list_of_csv_names = os.listdir(dir_path)
         list_of_img_links = []
+        list_of_img_names = []
         # on ouvre chacun de ces fichiers et on en extrait la liste de tous les liens vers les images des livres
         for csv_file in list_of_csv_names:
             with open('{}'.format(dir_path + csv_file), 'r', encoding='utf-8') as out:
@@ -176,8 +179,28 @@ def book_site_scraper(book_site_url, download_img = False):
                 for row in csv_read:
                     if len(row) == 10:
                         list_of_img_links.append(row[9])
+                        list_of_img_names.append(row[2])
+        list_of_img_links = list_of_img_links[1:]
+        list_of_img_names = list_of_img_names[1:]
+        print(list_of_img_names)
+        # on télécharge chaque image dans le dossier indiqué par dir_path
+        for i in range(len(list_of_img_links)):
+        
+            img_link = list_of_img_links[i]
+            img_name = list_of_img_names[i]
+            
+            # on obtient le contenu du stream de l'image
+            request = requests.get(img_link, stream = True)
 
-        print(list_of_img_links)
+            if request.status_code == 200:
+                # on met le decode_content sur True, pour ne pas que la taille de l'img soit zéro
+                request.raw.decode_content = True
+
+                with open('{}'.format(dir_path + img_name), 'wb') as picture:
+                    shutil.copyfileobj(request.raw, picture)
+
+                print('ok')
+        
 
     download_book_img(dir_path)
             
