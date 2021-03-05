@@ -67,12 +67,11 @@ def book_scraper(url, category_name=0):
             print("category_name est égal à 0")
 
     else:
-        with open('{}.csv'.format(category_name), 'w') as out:
-            csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_MINIMAL)
-            list_of_rowvalues = [product_page_url, universal_product_code, book_title, price_including_tax, price_excluding_tax, \
+        list_of_rowvalues = [product_page_url, universal_product_code, book_title, price_including_tax, price_excluding_tax, \
     number_available, product_description, category, review_rating, image_url]
-            csv_writing.writerow(list_of_rowvalues)
-            print("category_name a le bon nom")
+        return list_of_rowvalues
+
+            
         
 
     
@@ -118,11 +117,12 @@ def category_scraper(category_url):
         list_of_entete = ['product_page_url', 'universal_product_code(upc)',' title', 'price_including_tax', 'price_excluding_tax', \
 'number_available', 'product_description', 'category', 'review_rating', 'image_url']
         csv_writing.writerow(list_of_entete)
+        for book in links:
+            new_row = book_scraper(book, category_name)
+            csv_writing.writerow(new_row)
+        
     
-    print(category_name)
-    for book in links:
-        book_scraper(book, category_name)
-        print(1)
+    
     
     
 
