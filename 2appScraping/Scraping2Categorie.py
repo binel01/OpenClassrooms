@@ -105,7 +105,7 @@ def category_scraper(category_url):
     print(links)
 
             
-category_scraper("http://books.toscrape.com/catalogue/category/books/mystery_3/index.html")       
+category_scraper("http://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html")       
     
 
     
