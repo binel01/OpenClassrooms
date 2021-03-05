@@ -56,8 +56,8 @@ def book_scraper(url):
     
     with open('book.csv', 'w') as out:
         csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_MINIMAL)
-        list_of_entete = ['product_page_url', 'universal_product_code(upc)',' title', 'price_including_tax', 'price_excluding_tax', \
-'number_available', 'product_description', 'category', 'review_rating', 'image_url']
+        list_of_entete = ['product_page_url','universal_product_code(upc)','title','price_including_tax','price_excluding_tax',\
+'number_available','product_description','category','review_rating','image_url']
         list_of_rowvalues = [product_page_url, universal_product_code, book_title, price_including_tax, price_excluding_tax, \
 number_available, product_description, category, review_rating, image_url]
         """csv_writing.writerow(list_of_entete)
