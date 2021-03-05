@@ -18,6 +18,7 @@ def book_scraper(url):
     universal_product_code = table_scraping[0].string
     #les prix
     price_excluding_tax = table_scraping[2].string
+    print(str(price_excluding_tax))
     price_including_tax = table_scraping[3].string
     #le nombre d'exemplaires disponibles
     number_available = table_scraping[5].string
@@ -55,9 +56,9 @@ def book_scraper(url):
     image_url = "http://books.toscrape.com/" + re.sub('^\W{6}', '', url_img)
     
     with open('book.csv', 'w') as out:
-        csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_ALL)
+        csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_MINIMAL)
         list_of_entete = ['product_page_url', 'universal_product_code(upc)',' title', 'price_including_tax', 'price_excluding_tax', \
-'number_available', 'product_description', 'category', 'review_rating', 'image_url\n']
+'number_available', 'product_description', 'category', 'review_rating', 'image_url']
         list_of_rowvalues = [product_page_url, universal_product_code, book_title, price_including_tax, price_excluding_tax, \
 number_available, product_description, category, review_rating, image_url]
         """csv_writing.writerow(list_of_entete)
@@ -67,17 +68,30 @@ number_available, product_description, category, review_rating, image_url]
         csv_writing.writerow(list_of_entete)
         csv_writing.writerow(list_of_rowvalues)
 
+    
 
+def category_scraper(category_url):
+    category_webpage = requests.get(category_url)
+    soup_category = BeautifulSoup(category_webpage.content, "html.parser")
+
+    links = []
+    lis = soup_category.select("li h3 a")
+    for a in lis:
+        links.append(a.attrs["href"])
+    for index in range(len(links)):
+        links[index] = "http://books.toscrape.com/catalogue/" + re.sub('^\W{9}', '', links[index])
+    for i in links:
+        print(i)
+    
 
             
-
-        
+category_scraper("http://books.toscrape.com/catalogue/category/books/mystery_3/index.html")       
     
 
     
     
 
-book_scraper("http://books.toscrape.com/catalogue/sharp-objects_997/index.html")
+'book_scraper("http://books.toscrape.com/catalogue/sharp-objects_997/index.html")'
 """
 books_titles = soup.select("li h3 a")
 
