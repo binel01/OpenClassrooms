@@ -74,15 +74,35 @@ def category_scraper(category_url):
     category_webpage = requests.get(category_url)
     soup_category = BeautifulSoup(category_webpage.content, "html.parser")
 
+    next_page_button = soup_category.find(attrs={'class':'next'})
+    
+    # met la premiere page parsée par BeautifulSoup dans une liste
+    soups = [soup_category]
+
+    #tant qu'il y a un bouton next en bas de la page, on rajoute un nouvel élément soup dans la liste et on passe à la prochaine page
+    while next_page_button:
+        for text in next_page_button:
+            # va trouver l'url de la prochaine page si il y en a une
+            category_url = re.sub('[indexpage-]*\d*\.html$', '', category_url)
+            next_page_button_url = category_url + text.attrs['href']   
+        new_category_webpage = requests.get(next_page_button_url)
+        new_soup = BeautifulSoup(new_category_webpage.content, "html.parser")
+        soups.append(new_soup) 
+        next_page_button = new_soup.find(attrs={'class':'next'})
+    
     links = []
-    lis = soup_category.select("li h3 a")
-    for a in lis:
-        links.append(a.attrs["href"])
+    
+    #Scrapage de tous les liens présents sur la page
+    for soup_parsing in soups:
+        lis = soup_parsing.select("li h3 a")
+        for a in lis:
+            links.append(a.attrs["href"])
+
+    #Chaque lien se voit attribuer le bon début pour accéder à une page au lieu de ../..
     for index in range(len(links)):
         links[index] = "http://books.toscrape.com/catalogue/" + re.sub('^\W{9}', '', links[index])
-    for i in links:
-        print(i)
     
+    print(links)
 
             
 category_scraper("http://books.toscrape.com/catalogue/category/books/mystery_3/index.html")       
