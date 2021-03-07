@@ -130,6 +130,18 @@ def category_scraper(category_url, dir_path='', download_img = False):
             for book in links:
                 new_row, image_url, book_title = book_scraper(book, category_name, download_img)
                 csv_writing.writerow(new_row)
+                
+                # on enlève les paranthèses, les caractéres spéciaux des titres des img et on s'assure
+                #  qu'elles ne font pas plus de 31 caractères
+                if '(' in book_title:
+                    book_title = re.sub('\(.+\)', '', book_title)
+                if book_title[0] == ' ':
+                    book_title = book_title[1:]
+                elif book_title[-1] == ' ':
+                    book_title = book_title[:-1]
+                book_title = re.sub('\W+', '-', book_title)
+                if len(book_title) > 30:
+                    book_title = book_title[0:31]
 
                 # on obtient le contenu stream de l'image du livre
                 request = requests.get(image_url, stream = True)
@@ -141,7 +153,7 @@ def category_scraper(category_url, dir_path='', download_img = False):
                     with open('{}'.format(dir_path + book_title + '.jpg'), 'wb') as picture:
                         shutil.copyfileobj(request.raw, picture)
 
-                    print("l'image de " + book_title + 'a été téléchargée')
+                    print("l'image de " + book_title + ' a été téléchargée')
 
     # Si on ne veut pas télécharger les images des livres en scrapant
     else:
@@ -173,7 +185,7 @@ def book_site_scraper(book_site_url, download_img = False):
 
     
     # si il n'existe pas un dossier pour y mettre les csv, on en crée un
-    dir_path = '../Images'
+    dir_path = '../Csv_and_Images'
     try:
         os.mkdir(dir_path)
     except OSError:
