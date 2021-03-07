@@ -8,7 +8,7 @@ import time
 import shutil
 
 
-def book_scraper(url, category_name=0):
+def book_scraper(url, category_name=0, download_img = False):
     webpage = requests.get(url)
     soup = BeautifulSoup(webpage.content, "html.parser")
     #titre du livre
@@ -78,7 +78,7 @@ def book_scraper(url, category_name=0):
 
     
 
-def category_scraper(category_url, dir_path=''):
+def category_scraper(category_url, dir_path='', download_img = False):
     category_webpage = requests.get(category_url)
     soup_category = BeautifulSoup(category_webpage.content, "html.parser")
 
@@ -120,16 +120,27 @@ def category_scraper(category_url, dir_path=''):
     else:
         category_name = category_name
 
-
-    # on écrit un fichier .csv du nom de la catégorie avec un dir_path si on en a fourni un, avec tous les livres de la cat.
-    with open('{}.csv'.format(dir_path + category_name), 'w', encoding='utf-8') as out:
-        csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_ALL)
-        list_of_entete = ['product_page_url', 'universal_product_code(upc)',' title', 'price_including_tax', 'price_excluding_tax', \
-'number_available', 'product_description', 'category', 'review_rating', 'image_url']
-        csv_writing.writerow(list_of_entete)
-        for book in links:
-            new_row = book_scraper(book, category_name)
-            csv_writing.writerow(new_row)
+    # Si on veut télécharger les images des livres en scrapant
+    if download_img = True:
+        with open('{}.csv'.format(dir_path + category_name), 'w', encoding='utf-8') as out:
+            csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_ALL)
+            list_of_entete = ['product_page_url', 'universal_product_code(upc)',' title', 'price_including_tax', 'price_excluding_tax', \
+    'number_available', 'product_description', 'category', 'review_rating', 'image_url']
+            csv_writing.writerow(list_of_entete)
+            for book in links:
+                new_row = book_scraper(book, category_name, download_img)
+                csv_writing.writerow(new_row)
+    # Si on ne veut pas télécharger les images des livres en scrapant
+    else:
+        # on écrit un fichier .csv du nom de la catégorie avec un dir_path si on en a fourni un, avec tous les livres de la cat.
+        with open('{}.csv'.format(dir_path + category_name), 'w', encoding='utf-8') as out:
+            csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_ALL)
+            list_of_entete = ['product_page_url', 'universal_product_code(upc)',' title', 'price_including_tax', 'price_excluding_tax', \
+    'number_available', 'product_description', 'category', 'review_rating', 'image_url']
+            csv_writing.writerow(list_of_entete)
+            for book in links:
+                new_row = book_scraper(book, category_name)
+                csv_writing.writerow(new_row)
     
         
     
@@ -161,48 +172,11 @@ def book_site_scraper(book_site_url, download_img = False):
 
     # On scrape chaque catégorie et l'on range les fichiers .csv dans le dossier Csv_and_Images par défaut
     """for link in category_links:
-        category_scraper(link, dir_path, download_book_img)
+        category_scraper(link, dir_path, download_img)
         print(link + ' ... Scraped!')
         time.sleep(1)"""
 
-    def download_book_img(dir_path):
-        #pour chaque fichier csv dans le dir_path, on lit le fichier, on récupère les liens vers les photos, 
-        # on les téléch
-        # on récupère la liste des noms de tous les fichiers .csv dans le dossier où ils ont été rassemblés
-        list_of_csv_names = os.listdir(dir_path)
-        list_of_img_links = []
-        list_of_img_names = []
-        # on ouvre chacun de ces fichiers et on en extrait la liste de tous les liens vers les images des livres
-        for csv_file in list_of_csv_names:
-            with open('{}'.format(dir_path + csv_file), 'r', encoding='utf-8') as out:
-                csv_read = csv.reader(out, delimiter=';')
-                for row in csv_read:
-                    if len(row) == 10:
-                        list_of_img_links.append(row[9])
-                        list_of_img_names.append(row[2])
-        list_of_img_links = list_of_img_links[1:]
-        list_of_img_names = list_of_img_names[1:]
-        print(list_of_img_names)
-        # on télécharge chaque image dans le dossier indiqué par dir_path
-        for i in range(len(list_of_img_links)):
-        
-            img_link = list_of_img_links[i]
-            img_name = list_of_img_names[i]
-            
-            # on obtient le contenu du stream de l'image
-            request = requests.get(img_link, stream = True)
-
-            if request.status_code == 200:
-                # on met le decode_content sur True, pour ne pas que la taille de l'img soit zéro
-                request.raw.decode_content = True
-
-                with open('{}'.format(dir_path + img_name), 'wb') as picture:
-                    shutil.copyfileobj(request.raw, picture)
-
-                print('ok')
-        
-
-    download_book_img(dir_path)
+   
             
 
     
