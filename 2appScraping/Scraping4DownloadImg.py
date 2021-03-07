@@ -71,7 +71,7 @@ def book_scraper(url, category_name=0, download_img = False):
     else:
         list_of_rowvalues = [product_page_url, universal_product_code, book_title, price_including_tax, price_excluding_tax, \
     number_available, product_description, category, review_rating, image_url]
-        return list_of_rowvalues
+        return list_of_rowvalues, image_url, book_title
 
             
         
@@ -121,15 +121,28 @@ def category_scraper(category_url, dir_path='', download_img = False):
         category_name = category_name
 
     # Si on veut télécharger les images des livres en scrapant
-    if download_img = True:
+    if download_img == True:
         with open('{}.csv'.format(dir_path + category_name), 'w', encoding='utf-8') as out:
             csv_writing = csv.writer(out, delimiter = ';', quoting = csv.QUOTE_ALL)
             list_of_entete = ['product_page_url', 'universal_product_code(upc)',' title', 'price_including_tax', 'price_excluding_tax', \
     'number_available', 'product_description', 'category', 'review_rating', 'image_url']
             csv_writing.writerow(list_of_entete)
             for book in links:
-                new_row = book_scraper(book, category_name, download_img)
+                new_row, image_url, book_title = book_scraper(book, category_name, download_img)
                 csv_writing.writerow(new_row)
+
+                # on obtient le contenu stream de l'image du livre
+                request = requests.get(image_url, stream = True)
+
+                if request.status_code == 200:
+                    # on met le decode_content sur True pour ne pas que la taille de l'image soit zéro
+                    request.raw.decode_content = True
+                    # on écrit l'image dans le dossier spécifié par dir_path
+                    with open('{}'.format(dir_path + book_title + '.jpg'), 'wb') as picture:
+                        shutil.copyfileobj(request.raw, picture)
+
+                    print("l'image de " + book_title + 'a été téléchargée')
+
     # Si on ne veut pas télécharger les images des livres en scrapant
     else:
         # on écrit un fichier .csv du nom de la catégorie avec un dir_path si on en a fourni un, avec tous les livres de la cat.
@@ -160,7 +173,7 @@ def book_site_scraper(book_site_url, download_img = False):
 
     
     # si il n'existe pas un dossier pour y mettre les csv, on en crée un
-    dir_path = '../Csv_and_Images'
+    dir_path = '../Images'
     try:
         os.mkdir(dir_path)
     except OSError:
@@ -171,10 +184,10 @@ def book_site_scraper(book_site_url, download_img = False):
     dir_path = dir_path + "/"
 
     # On scrape chaque catégorie et l'on range les fichiers .csv dans le dossier Csv_and_Images par défaut
-    """for link in category_links:
+    for link in category_links:
         category_scraper(link, dir_path, download_img)
         print(link + ' ... Scraped!')
-        time.sleep(1)"""
+        time.sleep(1)
 
    
             
@@ -186,7 +199,7 @@ def book_site_scraper(book_site_url, download_img = False):
 # exemple d'appel de la fonction book_site_scraper pour faire un scraping de toutes les cat. de books2scrape
 # cet appel va mettre toutes les données dans un fichier csv différent par catégorie et ces fichiers csv 
 # dans un dossier Csv_and_Images
-book_site_scraper("http://books.toscrape.com/index.html")
+book_site_scraper("http://books.toscrape.com/index.html", download_img= True)
 
 # exemple d'appel de la fonction category_scraper pour uniquement scraper une catégorie,
 # crée un fichier csv du nom de la cat.
